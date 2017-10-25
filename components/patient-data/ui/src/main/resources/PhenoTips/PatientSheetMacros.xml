@@ -377,5 +377,173 @@
     #set ($discard = $genesSummary.add({"key" : $g.gene, "status" : $g.status}))
   #end
 #end
+
+## =====================================================================
+##
+## Cancer data
+##
+##
+#macro (__cancerSummary_getPresets $presets)
+  #set ($preferencesClassName = 'XWiki.XWikiPreferences')
+  #set ($presetClassName = 'PhenoTips.CancerSettings')
+  #set ($presetIdName = 'cancerId')
+  #set ($presetLabelName = 'cancerLabel')
+  #set ($presetCancerObj = $xwiki.getDocument($preferencesClassName).getObjects($presetClassName))
+  #foreach ($obj in $presetCancerObj)
+    #set ($presetId = $obj.getValue($presetIdName))
+    #set ($presetLabel = $obj.getValue($presetLabelName))
+    #if ("$!{presetId}" != '' || "$!{presetLabel}" != '')
+      #set ($discard = $presets.put($stringtool.defaultIfBlank("$!{presetId}", "$!{presetLabel}"), "$!{presetLabel}"))
+    #end
+  #end
+#end
+
+#macro (__cancerSummary_displayPresets $presets)
+  #__cancerSummary_getPresets($presets)
+  #foreach ($key in $presets.keySet())
+    #set ($standardTerm = $services.vocabularies.resolveTerm($key))
+    #set ($cancerName = "$!{presets.get($key)}")
+    #if ($cancerName == '')
+      #set ($cancerName = $stringtool.defaultIfBlank("$!{standardTerm.name}", $key))
+    #end
+    (% class="default-cancer" %) (((
+      #if (!$standardTerm)
+        #__cancerSummary_addPresetLabel($key, $cancerName, "term-entry notmapped", "fa fa-exclamation-triangle fa-fw", "$services.localization.render('phenotips.patientSheetCode.termSuggest.nonStandardCancer')")
+      #else
+        #__cancerSummary_addPresetLabel($key, $cancerName, "term-entry", "fa fa-info-circle xHelpButton cancer-info", "$!{key}")
+      #end
+    )))
+  #end
+#end
+
+#macro (__cancerSummary_addPresetLabel $cancerId $cancerName $labelClass $iconClass $iconTitle)
+  {{html wiki=false clean=false}}
+  &lt;span&gt;
+    &lt;label class="$labelClass" for="cancer_${cancerId}"&gt;
+      &lt;input title="$cancerName" type="checkbox" name="${cancerId}" id="cancer_${cancerId}"/&gt;$cancerName
+    &lt;/label&gt;
+    &lt;span class="$iconClass" title="$iconTitle"&gt;&lt;/span&gt;
+  &lt;/span&gt;
+  {{/html}}
+#end
+
+#macro (__cancerSummary_displayData $cancerObjects $qualifierClass)
+  #set($presets = {})
+  #__cancerSummary_getPresets($presets)
+  #set ($cancerProperty = "cancer")
+  #set ($statusProperty = "affected")
+  #set ($propertyMap = {"ageAtDiagnosis": "Age:", "laterality" : "Laterality:", "primary" : "Type:", "notes" : "Notes:"})
+  #set ($valueMaps = {"primary" : {"1" : "Primary", "0" : "Mets"}, "laterality" : {"u" : "Unilateral", "r" : "Right", "l" : "Left", "bi" : "Bilateral"}})
+  #foreach ($o in $cancerObjects)
+    #set ($cancerId = $o.getProperty($cancerProperty).value)
+    #set ($standardTerm = $services.vocabularies.resolveTerm($cancerId))
+    #set ($cancerName = $stringtool.defaultIfBlank("$!{standardTerm.name}", $cancerId))
+    #set ($cancerStatus = $o.getProperty($statusProperty).value)
+    #set ($qualifierObjects = $doc.getObjects($qualifierClass.name, $cancerProperty, $cancerId))
+    {{html clean="false"}}##
+    &lt;tr class="cancer_field"&gt;
+    &lt;td&gt;
+    &lt;table class="summary-group cancer-summary-group" id="cancer_$cancerId"&gt;
+    &lt;tbody&gt;
+    &lt;tr class="term-holder"&gt;
+      &lt;td&gt;
+    {{/html}}##
+    #set ($presetName = "$!{presets[$cancerId]}")
+    #if (!$standardTerm)
+      #__cancerSummary_addCancerLabel($cancerId, $stringtool.defaultIfBlank($presetName, $cancerName), "term-label notmapped", "fa fa-exclamation-triangle fa-fw", "$services.localization.render('phenotips.patientSheetCode.termSuggest.nonStandardCancer')")##
+    #else
+      #__cancerSummary_addCancerLabel($cancerId, $stringtool.defaultIfBlank($presetName, $cancerName), "term-label", "fa fa-info-circle xHelpButton cancer-info", $cancerId)##
+    #end
+    {{html clean="false"}}##
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    {{/html}}##
+    #foreach($q in $qualifierObjects)
+      {{html clean="false"}}##
+      &lt;tr&gt;
+        &lt;td class="dialog-holder"&gt;
+          &lt;div class="summary-item view-cancer"&gt;
+            &lt;div class="term-summary"&gt;
+              &lt;dl&gt;
+      {{/html}}##
+      #foreach ($qProp in $q.xWikiClass.properties)
+        #set($propName = "$!{propertyMap[$qProp.name]}")
+        #if ($propName != "")
+          #set ($valueMapper = $valueMaps[$qProp.name])
+          #set ($propValue = "$!{q.getProperty($qProp.name).value}")
+          #if ($valueMapper)
+            #set ($propValue = "$!{valueMapper[$propValue]}")
+          #end
+          #if ($propValue != "")
+            {{html clean="false"}}##
+                &lt;dt class="$qProp.name inline"&gt;&lt;label&gt;$propName&lt;/label&gt;&lt;/dt&gt;
+                &lt;dd class="inline $qProp.name preview"&gt;$propValue&lt;/dd&gt;
+            {{/html}}##
+          #end
+        #end
+      #end
+      {{html clean="false"}}##
+              &lt;/dl&gt;
+              &lt;div class="clearfloats"&gt;&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/td&gt;
+      &lt;/tr&gt;
+      {{/html}}##
+    #end
+    {{html clean="false"}}##
+    &lt;/tbody&gt;
+    &lt;/table&gt;
+    &lt;/td&gt;
+    &lt;/tr&gt;
+    {{/html}}##
+  #end
+#end
+
+#macro (__cancerSummary_addCancerLabel $cancerId $cancerName $labelClass $iconClass $iconTitle)
+  {{html wiki=false clean=false}}
+  &lt;span class="$labelClass"&gt;
+    &lt;label class="label-field"&gt;$stringtool.defaultIfBlank($cancerName, $cancerId) &lt;span class="$iconClass" title="$iconTitle"&gt;&lt;/span&gt;&lt;/label&gt;
+  &lt;/span&gt;
+  {{/html}}
+#end
+
+#macro (__cancerSummary_getJsonData $cancerObjects $qualifierClass $jsonData)
+  #set ($cancerProperty = "cancer")
+  #set ($countProperty = "count")
+  #foreach ($o in $cancerObjects)
+    #set ($cancer = {})
+    #set ($qualifierObjects = [])
+    #set ($qualifierData = [])
+    #set ($discard = $cancer.put($countProperty, $o.number))
+    #foreach ($prop in $o.xWikiClass.properties)
+      #if ($prop.name == $cancerProperty)
+        #set ($cancerId = $o.getProperty($cancerProperty).value)
+        #set ($discard = $cancer.put("id", $cancerId))
+        #set ($cancerName = "$!{services.vocabularies.resolveTerm($cancerId).name}")
+        #set ($discard = $cancer.put("label", $cancerName))
+        #set ($qualifierObjects = $doc.getObjects($qualifierClass.name, $cancerProperty, $cancerId))
+      #else
+        #set ($propValue = $o.getProperty($prop.name).value)
+        #if ("$!{propValue}" != "")
+          #set ($discard = $cancer.put($prop.name, $propValue))
+        #end
+      #end
+    #end
+    #foreach ($q in $qualifierObjects)
+      #set ($qualifier = {})
+      #set ($discard = $qualifier.put($countProperty, $q.number))
+      #foreach ($qProp in $q.xWikiClass.properties)
+        #set ($qValue = $q.getProperty($qProp.name).value)
+        #if ($qProp.name != $cancerProperty &amp;&amp; "$!{qValue}" != "")
+          #set ($discard = $qualifier.put($qProp.name, $qValue))
+        #end
+      #end
+      #set ($discard = $qualifierData.add($qualifier))
+    #end
+    #set ($discard = $cancer.put("qualifiers", $qualifierData))
+    #set ($discard = $jsonData.add($cancer))
+  #end
+#end
 {{/velocity}}</content>
 </xwikidoc>

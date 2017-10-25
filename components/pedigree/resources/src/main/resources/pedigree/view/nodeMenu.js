@@ -29,9 +29,7 @@ define([
         "pedigree/model/helpers",
         "pedigree/view/datepicker",
         "pedigree/view/graphicHelpers",
-        "pedigree/view/ageCalc",
-        "pedigree/detailsDialog",
-        "pedigree/detailsDialogGroup"
+        "pedigree/view/ageCalc"
     ], function(
         Disorder,
         HPOTerm,
@@ -39,10 +37,7 @@ define([
         PedigreeDate,
         Helpers,
         DatePicker,
-        GraphicHelpers,
-        AgeCalc,
-        DetailsDialog,
-        DetailsDialogGroup
+        GraphicHelpers
     ){
     NodeMenu = Class.create({
         initialize : function(data, otherCSSClass) {
@@ -300,7 +295,7 @@ define([
                         resultCategory : "term_category",
                         resultInfo : {},
                         resultParent : "is_a",
-                        tooltip: 'phenotype-info',
+                        tooltip: 'cancer-info',
                         parentContainer: $('tab_Cancers').up('.tabholder')
                     },
                     'patients' : {
@@ -864,27 +859,7 @@ define([
                 _this.form.select('table.cancers-summary-group').each(function(qualifier) {
                     var cancerWidget = qualifier._widget;
                     if (cancerWidget.isAffected()) {
-
-                        var getBestNumericAgeApproximation = function(value) {
-                            if (!value) {
-                                return "";
-                            }
-                            if (isNaN(parseInt(value))) {
-                                if (value.indexOf('after_') > -1) {
-                                    return parseInt(value.replace('after_', '')) + 1;
-                                }
-                                if (value == "before_1") {
-                                    return 0;
-                                }
-                                return parseInt(value.replace('before_', '')) - 9;
-                            }
-                            return parseInt(value);
-                        }
-
                         var cancerData = cancerWidget.getValues();
-                        cancerData.qualifiers.forEach(function(qualifier) {
-                            qualifier.numericAgeAtDiagnosis = getBestNumericAgeApproximation(qualifier.ageAtDiagnosis);
-                        });
                         data.push(cancerData);
                     }
                 });
@@ -895,6 +870,22 @@ define([
         _buildNewCancerElement: function(cancerId, cancerName, dataName, optionsParam) {
             var toStoredLateralityMap = {"Bilateral" : "bi", "Unilateral" : "u", "Right" : "r", "Left" : "l"};
             var toDisplayedLateralityMap = {"bi" : "Bilateral", "u" : "Unilateral", "r" : "Right", "l" : "Left"};
+
+            var getBestNumericAgeApproximation = function(value) {
+                if (!value) {
+                    return "";
+                }
+                if (isNaN(parseInt(value))) {
+                    if (value.indexOf('after_') > -1) {
+                        return parseInt(value.replace('after_', '')) + 1;
+                    }
+                    if (value == "before_1") {
+                        return 0;
+                    }
+                    return parseInt(value.replace('before_', '')) - 9;
+                }
+                return parseInt(value);
+            };
 
             var toStoredAgeFx = function(value) {
                 if (isNaN(parseInt(value))) {
@@ -947,8 +938,8 @@ define([
             var toDisplayedTypeFx = function(value) {
                 return value ? "Primary" : "Mets";
             };
-            var qualifiersWidget = new DetailsDialogGroup(dataName, optionsParam)
-                .withLabel(cancerName, cancerId, 'phenotype-info')
+            var qualifiersWidget = new PhenoTips.widgets.DetailsDialogGroup(dataName, optionsParam)
+                .withLabel(cancerName, cancerId, 'cancer-info')
                 .dialogsAddDeleteAction()
                 .dialogsAddNumericSelect({
                     'from': 1,
@@ -960,7 +951,8 @@ define([
                     'qualifierLabel': 'Age:',
                     'qualifierName': 'ageAtDiagnosis',
                     'displayedToStoredMapper': toStoredAgeFx,
-                    'storedToDisplayedMapper': toDisplayedAgeFx})
+                    'storedToDisplayedMapper': toDisplayedAgeFx,
+                    'numericApproximation' : getBestNumericAgeApproximation})
                 .dialogsAddItemSelect({
                     'data': ['Unknown', 'Bilateral', 'Unilateral', 'Right', 'Left'],
                     'defListItemClass': 'laterality',
