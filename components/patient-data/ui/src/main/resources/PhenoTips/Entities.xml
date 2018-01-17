@@ -266,27 +266,39 @@ document.observe('xwiki:dom:loaded', function() {
 /**********************************************************************************************
 * Tabs css.
 */
+#document-head .title-tab h1 {
+  border-radius: inherit;
+  box-shadow: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-shadow: inherit;
+  color: $theme.menuLinkColor;
+  background-color: $theme.menuBackgroundColor;
+  background-image: linear-gradient(to bottom, $theme.menuBackgroundColor 0%, $theme.menuGradientColor 50%);
+  border: 0 none;
+  border-bottom: 0 none;
+  margin: 0;
+  padding: 0.4em 11px;
+}
 #document-head .title-tab {
   display: inline-block;
   vertical-align: top;
   line-height: 0;
-}
-
-#document-head .title-tab h1 {
-  text-transform: none !important;
+  cursor: default;
+  font-size: 1.2em;
+  letter-spacing: 2px;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -3px 3px rgba(0, 0, 0, 0.15);
+  text-transform: none;
+  text-shadow: 0 0 1px $theme.buttonPrimaryTextColor;
 }
 
 #document-head .title-tab:not(.active) {
   background-color: #EEE;
   background-image: linear-gradient(to bottom, #EEE 0%, #DDD 50%);
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 -3px 3px rgba(0, 0, 0, 0.15);
-  font-size: 1.2em;
   font-weight: bold;
-  letter-spacing: 2px;
-  margin: 0 3px;
+  margin: 0;
   padding: 0.4em 11px;
-  text-shadow: 0 0 1px #FFFFFF;
 }
 
 #document-head .title-tab a {
