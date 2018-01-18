@@ -377,5 +377,23 @@
     #set ($discard = $genesSummary.add({"key" : $g.gene, "status" : $g.status}))
   #end
 #end
+
+## =====================================================================
+##
+## Display external ID page title in case it is configured to be shown instead of internal ID
+##
+### @param defaultTitle The default page title to format for displaying
+#macro(pageExternalTitle $defaultTitle)
+#set($config = $xwiki.getDocument('data.WebHome').getObject('PhenoTips.DBConfigurationClass'))
+#set($pageExternalTitle = $defaultTitle)
+#if($config &amp;&amp; "$!{config.getProperty('hideInternalIds').value}" == '1' &amp;&amp; "$!{doc.getValue('external_id')}" != '')
+  #set($ext_id = "$!{doc.getValue('external_id')}")
+  #if("$!{config.getProperty('externalIdFormat').value}" == 'XXX-XXX-XXX')
+    #set($ext_id = $ext_id.replaceAll("([^-])(?=([^-]{3})+(?=(-|$)))", "$1-"))
+  #end
+  #set($pageExternalTitle = "$!{prefix}$ext_id")
+#end
+${escapetool.xml($!pageExternalTitle)}
+#end
 {{/velocity}}</content>
 </xwikidoc>
